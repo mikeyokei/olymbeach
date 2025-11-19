@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { initializeFaceDetector, detectFaces } from './services/visionService';
-import { generateBackgroundImage } from './services/geminiService';
 import { HeadBubble } from './components/HeadBubble';
 import { FaceBox, AppStatus } from './types';
 
@@ -16,9 +15,9 @@ interface TrackedFace {
 // 2nd -> Right Middle (Fish)
 // 3rd -> Left Bottom (Squid)
 const SLOTS = [
-  { id: 'winner', left: '53%', top: '15%', size: 95, color: '#fbbf24', zIndex: 30 }, // Gold (Star)
-  { id: 'second', left: '88%', top: '63%', size: 85, color: '#38bdf8', zIndex: 20 }, // Blue (Fish)
-  { id: 'third',  left: '13%', top: '70%', size: 85, color: '#a855f7', zIndex: 20 }, // Purple (Squid)
+  { id: 'winner', left: '53%', top: '15%', size: 140, color: '#fbbf24', zIndex: 30 }, // Gold (Star)
+  { id: 'second', left: '88%', top: '63%', size: 125, color: '#38bdf8', zIndex: 20 }, // Blue (Fish)
+  { id: 'third',  left: '13%', top: '70%', size: 125, color: '#a855f7', zIndex: 20 }, // Purple (Squid)
 ];
 
 // Specific background image provided
@@ -35,10 +34,6 @@ const App: React.FC = () => {
   const trackedFacesRef = useRef<TrackedFace[]>([]);
   const nextFaceIdRef = useRef<number>(0);
 
-  const [bgImage, setBgImage] = useState<string>(''); 
-  const [prompt, setPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [showControls, setShowControls] = useState(true);
 
   useEffect(() => {
     const setup = async () => {
@@ -154,20 +149,6 @@ const App: React.FC = () => {
     loop();
   };
 
-  const handleGenerateBackground = async () => {
-    if (!prompt.trim()) return;
-    setIsGenerating(true);
-    try {
-        const newBg = await generateBackgroundImage(prompt);
-        setBgImage(newBg);
-        setShowControls(false);
-    } catch (e) {
-        console.error(e);
-        alert("Failed to generate background. Check API Key.");
-    } finally {
-        setIsGenerating(false);
-    }
-  };
 
   return (
     <div className="w-full h-screen overflow-hidden bg-neutral-900 flex items-center justify-center">
@@ -189,7 +170,7 @@ const App: React.FC = () => {
         {/* Background Layer */}
         <div className="absolute inset-0 w-full h-full">
           <img 
-            src={bgImage || STATIC_BG_URL} 
+            src={STATIC_BG_URL} 
             alt="Stage Background" 
             className="w-full h-full object-cover"
           />
@@ -230,40 +211,6 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* UI Controls */}
-      <div className={`absolute bottom-6 left-6 right-6 z-50 transition-transform duration-300 ${showControls ? 'translate-y-0' : 'translate-y-[150%]'}`}>
-        <div className="bg-neutral-900/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl max-w-md mx-auto">
-            <div className="flex justify-between items-center mb-2">
-                <h1 className="text-lg font-bold text-white">Stage Control</h1>
-                <button onClick={() => setShowControls(false)} className="text-neutral-400 hover:text-white">▼</button>
-            </div>
-            <div className="flex gap-2">
-                <input 
-                    type="text" 
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Generate new stage..."
-                    className="flex-1 bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-pink-500 outline-none"
-                />
-                <button 
-                    onClick={handleGenerateBackground}
-                    disabled={isGenerating || !prompt}
-                    className="bg-white text-black px-3 py-2 rounded-lg text-sm font-bold"
-                >
-                    {isGenerating ? '...' : 'Go'}
-                </button>
-            </div>
-        </div>
-      </div>
-
-      {!showControls && (
-        <button 
-            onClick={() => setShowControls(true)}
-            className="absolute bottom-6 right-6 bg-neutral-900/80 text-white p-3 rounded-full z-40 border border-white/10"
-        >
-            ⚙️
-        </button>
-      )}
 
     </div>
   );
