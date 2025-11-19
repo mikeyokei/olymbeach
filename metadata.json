@@ -1,0 +1,8 @@
+{
+  "name": "FaceStage Mixer",
+  "description": "Real-time multi-person face tracking overlay on AI-generated backgrounds.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
