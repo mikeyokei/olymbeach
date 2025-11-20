@@ -58,20 +58,18 @@ const App: React.FC = () => {
         style={{ objectFit: 'cover' }}
       />
 
-      {/* Main Stage Container - Responsive Portrait Aspect Ratio */}
-      <div className="relative w-full h-full sm:h-full sm:max-h-[90vh] sm:aspect-[3/4] bg-black shadow-2xl overflow-hidden sm:border-[8px] border-black sm:rounded-lg">
+      {/* Main Stage Container - Auto-sizing based on image to prevent cropping and align coordinates */}
+      <div className="relative max-w-full max-h-full sm:max-h-[90vh] shadow-2xl overflow-hidden sm:border-[8px] border-black sm:rounded-lg flex items-center justify-center">
         
-        {/* Background Layer */}
-        <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-neutral-900">
-          <img 
-            src={STATIC_BG_URL} 
-            alt="Stage Background" 
-            className="max-w-full max-h-full object-contain sm:w-full sm:h-full sm:object-cover"
-          />
-        </div>
+        {/* Background Image - Controls the container size */}
+        <img 
+          src={STATIC_BG_URL} 
+          alt="Stage Background" 
+          className="block w-auto h-auto max-w-full max-h-screen sm:max-h-[90vh] object-contain"
+        />
 
         {/* Characters Layer */}
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none w-full h-full">
           {SLOTS.map((slot, idx) => {
              const face = displayFaces[idx];
              // Responsive bubble size: smaller on mobile
