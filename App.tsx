@@ -1,171 +1,65 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { initializeFaceDetector, detectFaces } from './services/visionService';
+import React, { useEffect, useState } from 'react';
+import { initializeFaceDetector } from './services/visionService';
 import { HeadBubble } from './components/HeadBubble';
-import { FaceBox, AppStatus } from './types';
-
-// Tracker Interface
-interface TrackedFace {
-  id: number;
-  data: FaceBox;
-  lastSeen: number;
-}
-
-// Updated Slot Configuration to match the specific "You Got A Star" artwork provided
-// 1st (Winner) -> Middle Top (Star in the cup)
-// 2nd -> Right Middle (Fish)
-// 3rd -> Left Bottom (Squid)
-const SLOTS = [
-  { id: 'winner', left: '53%', top: '15%', size: 140, color: '#fbbf24', zIndex: 30 }, // Gold (Star)
-  { id: 'second', left: '88%', top: '63%', size: 125, color: '#38bdf8', zIndex: 20 }, // Blue (Fish)
-  { id: 'third',  left: '13%', top: '70%', size: 125, color: '#a855f7', zIndex: 20 }, // Purple (Squid)
-];
-
-// Specific background image provided
-const STATIC_BG_URL = "https://i.ibb.co/HMJ0FWf/Screenshot-2025-11-19-at-8-41-19-PM.png";
+import { AppStatus } from './types';
+import { useCamera } from './hooks/useCamera';
+import { useFaceTracking } from './hooks/useFaceTracking';
+import { SLOTS, STATIC_BG_URL } from './utils/constants';
 
 const App: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [status, setStatus] = useState<AppStatus>(AppStatus.LOADING_MODEL);
+  const [modelReady, setModelReady] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
-  // State for rendering: Maps Slot Index -> FaceBox
-  const [displayFaces, setDisplayFaces] = useState<(FaceBox | null)[]>([null, null, null]);
+  // Initialize camera
+  const { videoRef, status, isVideoReady } = useCamera();
   
-  // Persistent tracking refs
-  const trackedFacesRef = useRef<TrackedFace[]>([]);
-  const nextFaceIdRef = useRef<number>(0);
-
-
+  // Detect mobile viewport
   useEffect(() => {
-    const setup = async () => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  // Initialize face detection model
+  useEffect(() => {
+    const initModel = async () => {
       try {
         await initializeFaceDetector();
-        setStatus(AppStatus.WAITING_FOR_CAMERA);
-
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            facingMode: 'user' 
-          } 
-        });
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadeddata = () => {
-            setStatus(AppStatus.READY);
-            startTrackingLoop();
-          };
-        }
+        setModelReady(true);
       } catch (err) {
-        console.error("Initialization failed", err);
-        setStatus(AppStatus.ERROR);
+        console.error('Model initialization failed:', err);
       }
     };
-    setup();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    initModel();
   }, []);
-
-  const startTrackingLoop = () => {
-    const loop = () => {
-      if (videoRef.current && videoRef.current.readyState >= 2) {
-        const now = performance.now();
-        const detections = detectFaces(videoRef.current, now);
-        
-        // Convert to FaceBox format
-        const currentBoxes: FaceBox[] = detections.map(d => ({
-          x: d.boundingBox.originX,
-          y: d.boundingBox.originY,
-          width: d.boundingBox.width,
-          height: d.boundingBox.height
-        }));
-
-        // TRACKING LOGIC
-        // 1. Update existing tracks
-        const activeTracks = [...trackedFacesRef.current];
-        const usedBoxes = new Set<number>();
-
-        activeTracks.forEach(track => {
-          let bestIdx = -1;
-          let minDist = Number.MAX_VALUE;
-
-          // Find closest box center
-          const tx = track.data.x + track.data.width / 2;
-          const ty = track.data.y + track.data.height / 2;
-
-          currentBoxes.forEach((box, idx) => {
-            if (usedBoxes.has(idx)) return;
-            const bx = box.x + box.width / 2;
-            const by = box.y + box.height / 2;
-            const dist = Math.hypot(tx - bx, ty - by);
-            
-            if (dist < minDist) {
-              minDist = dist;
-              bestIdx = idx;
-            }
-          });
-
-          // Threshold for matching
-          if (bestIdx !== -1 && minDist < 200) {
-            track.data = currentBoxes[bestIdx];
-            track.lastSeen = now;
-            usedBoxes.add(bestIdx);
-          }
-        });
-
-        // 2. Create new tracks for unmatched boxes
-        currentBoxes.forEach((box, idx) => {
-          if (!usedBoxes.has(idx)) {
-            activeTracks.push({
-              id: nextFaceIdRef.current++,
-              data: box,
-              lastSeen: now
-            });
-          }
-        });
-
-        // 3. Prune stale tracks
-        const prunedTracks = activeTracks.filter(t => (now - t.lastSeen) < 500);
-        
-        // 4. Sort by ID (Arrival Time) - Lowest ID = First Arrived = Winner
-        prunedTracks.sort((a, b) => a.id - b.id);
-
-        // Update Refs
-        trackedFacesRef.current = prunedTracks;
-
-        // 5. Assign to Slots
-        // Slot 0: Winner (Middle)
-        // Slot 1: Second (Right)
-        // Slot 2: Third (Left)
-        const newDisplayFaces = [null, null, null] as (FaceBox | null)[];
-        
-        prunedTracks.slice(0, 3).forEach((track, i) => {
-          newDisplayFaces[i] = track.data;
-        });
-
-        setDisplayFaces(newDisplayFaces);
-      }
-      requestAnimationFrame(loop);
-    };
-    loop();
-  };
+  
+  // Track faces
+  const { displayFaces } = useFaceTracking({
+    videoRef,
+    isVideoReady,
+    isModelReady: modelReady,
+  });
 
 
   return (
     <div className="w-full h-screen overflow-hidden bg-neutral-900 flex items-center justify-center">
       
-      {/* Hidden Video */}
+      {/* Hidden Video - Optimized for performance */}
       <video 
         ref={videoRef} 
         autoPlay 
         playsInline 
         muted 
         className="absolute opacity-0 pointer-events-none"
-        width="1280" 
-        height="720"
+        style={{ objectFit: 'cover' }}
       />
 
-      {/* Main Stage Container - Portrait Aspect Ratio to match the artwork */}
-      <div className="relative h-full max-h-[90vh] aspect-[3/4] bg-black shadow-2xl overflow-hidden border-[8px] border-black rounded-lg">
+      {/* Main Stage Container - Responsive Portrait Aspect Ratio */}
+      <div className="relative w-full h-full sm:h-full sm:max-h-[90vh] sm:aspect-[3/4] bg-black shadow-2xl overflow-hidden sm:border-[8px] border-black sm:rounded-lg">
         
         {/* Background Layer */}
         <div className="absolute inset-0 w-full h-full">
@@ -180,8 +74,10 @@ const App: React.FC = () => {
         <div className="absolute inset-0 pointer-events-none">
           {SLOTS.map((slot, idx) => {
              const face = displayFaces[idx];
+             // Responsive bubble size: smaller on mobile
+             const responsiveSize = isMobile ? slot.size * 0.7 : slot.size;
              const style = {
-               '--bubble-size': `${slot.size}px`,
+               '--bubble-size': `${responsiveSize}px`,
                left: slot.left,
                top: slot.top,
                transform: 'translate(-50%, -50%)',
@@ -200,18 +96,16 @@ const App: React.FC = () => {
              );
           })}
         </div>
-
-        {/* Waiting Message */}
-        {status === AppStatus.READY && !displayFaces.some(f => f !== null) && (
-           <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 w-full text-center z-40">
-              <div className="inline-block bg-black/60 backdrop-blur px-6 py-2 rounded-full border border-white/20 animate-bounce">
-                  <span className="text-white font-bold uppercase tracking-wider">Waiting for players...</span>
-              </div>
-           </div>
-        )}
       </div>
 
-
+      {/* Status Indicator (optional - only for errors) */}
+      {status === AppStatus.ERROR && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="bg-red-500/90 backdrop-blur px-4 py-2 rounded-lg border border-red-400">
+            <span className="text-white font-semibold">Camera Error</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
