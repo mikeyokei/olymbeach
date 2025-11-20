@@ -22,8 +22,8 @@ export const SLOTS: SlotConfig[] = [
   { id: 'third',  left: '13%', top: '70%', size: 125, color: '#a855f7', zIndex: 20 }, // Purple (Squid)
 ];
 
-// Background image - using local Ranking.png
-export const STATIC_BG_URL = "/Ranking.png";
+// Background image - using local Ranking.png (relative path for GitHub Pages)
+export const STATIC_BG_URL = "./Ranking.png";
 
 // Face tracking thresholds
 export const FACE_TRACKING = {
