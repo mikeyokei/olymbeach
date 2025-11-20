@@ -66,7 +66,7 @@ const App: React.FC = () => {
           <img 
             src={STATIC_BG_URL} 
             alt="Stage Background" 
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain sm:object-cover"
           />
         </div>
 
