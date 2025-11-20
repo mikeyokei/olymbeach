@@ -22,8 +22,8 @@ export const SLOTS: SlotConfig[] = [
   { id: 'third',  left: '13%', top: '70%', size: 125, color: '#a855f7', zIndex: 20 }, // Purple (Squid)
 ];
 
-// Background image
-export const STATIC_BG_URL = "https://i.ibb.co/HMJ0FWf/Screenshot-2025-11-19-at-8-41-19-PM.png";
+// Background image - using local Ranking.png
+export const STATIC_BG_URL = "/Ranking.png";
 
 // Face tracking thresholds
 export const FACE_TRACKING = {

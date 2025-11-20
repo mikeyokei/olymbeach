@@ -62,11 +62,11 @@ const App: React.FC = () => {
       <div className="relative w-full h-full sm:h-full sm:max-h-[90vh] sm:aspect-[3/4] bg-black shadow-2xl overflow-hidden sm:border-[8px] border-black sm:rounded-lg">
         
         {/* Background Layer */}
-        <div className="absolute inset-0 w-full h-full">
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-neutral-900">
           <img 
             src={STATIC_BG_URL} 
             alt="Stage Background" 
-            className="w-full h-full object-contain sm:object-cover"
+            className="max-w-full max-h-full object-contain sm:w-full sm:h-full sm:object-cover"
           />
         </div>
 
