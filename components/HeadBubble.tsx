@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { FaceBox } from '../types';
 import { CANVAS_CONFIG } from '../utils/constants';
+import { useDraggable } from '../hooks/useDraggable';
 
 interface HeadBubbleProps {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -8,11 +9,39 @@ interface HeadBubbleProps {
   color: string;
   isActive: boolean;
   style?: React.CSSProperties;
+  onDragMove?: (position: { x: number; y: number }) => void;
 }
 
-export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color, isActive, style }) => {
+export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color, isActive, style, onDragMove }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastRenderTimeRef = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  const { position, isDragging, handlers, dragListeners } = useDraggable();
+
+  // Global drag listeners
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', dragListeners.onMouseMove);
+      document.addEventListener('mouseup', dragListeners.onMouseUp);
+      document.addEventListener('touchmove', dragListeners.onTouchMove);
+      document.addEventListener('touchend', dragListeners.onTouchEnd);
+      
+      return () => {
+        document.removeEventListener('mousemove', dragListeners.onMouseMove);
+        document.removeEventListener('mouseup', dragListeners.onMouseUp);
+        document.removeEventListener('touchmove', dragListeners.onTouchMove);
+        document.removeEventListener('touchend', dragListeners.onTouchEnd);
+      };
+    }
+  }, [isDragging, dragListeners]);
+
+  // Notify parent of position changes
+  useEffect(() => {
+    if (onDragMove && (position.x !== 0 || position.y !== 0)) {
+      onDragMove(position);
+    }
+  }, [position, onDragMove]);
 
   useEffect(() => {
     let animationFrameId: number;
@@ -93,12 +122,18 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
 
   return (
     <div 
-      className={`absolute transition-all duration-500 ease-out ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}
+      ref={containerRef}
+      className={`absolute ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}
       style={{
         ...style,
         width: 'var(--bubble-size, 160px)',
         height: 'var(--bubble-size, 160px)',
+        left: style?.left ? `calc(${style.left} + ${position.x}px)` : position.x,
+        top: style?.top ? `calc(${style.top} + ${position.y}px)` : position.y,
+        transition: isDragging ? 'none' : 'all 500ms ease-out',
+        pointerEvents: 'auto',
       }}
+      {...handlers}
     >
       <div 
         className="w-full h-full rounded-full overflow-hidden shadow-2xl bg-black border-[3px] sm:border-[4px] relative z-10"

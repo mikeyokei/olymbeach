@@ -12,14 +12,14 @@ export interface SlotConfig {
 }
 
 // Slot Configuration matching "You Got A Star" artwork
-// 1st (Winner) -> Middle Top (Star in the cup)
-// 2nd -> Right Middle (Fish)
-// 3rd -> Left Bottom (Squid)
+// 1st (Winner) -> Middle Top (Star character in the cup)
+// 2nd -> Right Bottom (Fish character on platform)
+// 3rd -> Left Bottom (Squid character on platform)
 // Note: Sizes will be responsive via CSS (scaled down on mobile)
 export const SLOTS: SlotConfig[] = [
-  { id: 'winner', left: '53%', top: '15%', size: 140, color: '#fbbf24', zIndex: 30 }, // Gold (Star)
-  { id: 'second', left: '88%', top: '63%', size: 125, color: '#38bdf8', zIndex: 20 }, // Blue (Fish)
-  { id: 'third',  left: '13%', top: '70%', size: 125, color: '#a855f7', zIndex: 20 }, // Purple (Squid)
+  { id: 'winner', left: '50%', top: '18%', size: 160, color: '#fbbf24', zIndex: 30 }, // Gold (Star)
+  { id: 'second', left: '85%', top: '65%', size: 140, color: '#38bdf8', zIndex: 20 }, // Blue (Fish)
+  { id: 'third',  left: '15%', top: '68%', size: 140, color: '#a855f7', zIndex: 20 }, // Purple (Squid)
 ];
 
 // Background image - using local Ranking.png (relative path for GitHub Pages)
