@@ -11,19 +11,19 @@ export interface SlotConfig {
   zIndex: number;
 }
 
-// Slot Configuration matching "You Got A Star" artwork
-// 1st (Winner) -> Middle Top (Star character in the cup)
-// 2nd -> Right Bottom (Fish character on platform)
-// 3rd -> Left Bottom (Squid character on platform)
+// Slot Configuration matching "CÚP" trophy artwork
+// 1st (Winner) -> Middle Top (Inside the cup)
+// 2nd -> Right position
+// 3rd -> Left position
 // Note: Sizes will be responsive via CSS (scaled down on mobile)
 export const SLOTS: SlotConfig[] = [
-  { id: 'winner', left: '50%', top: '18%', size: 160, color: '#fbbf24', zIndex: 30 }, // Gold (Star)
-  { id: 'second', left: '85%', top: '65%', size: 140, color: '#38bdf8', zIndex: 20 }, // Blue (Fish)
-  { id: 'third',  left: '15%', top: '68%', size: 140, color: '#a855f7', zIndex: 20 }, // Purple (Squid)
+  { id: 'winner', left: '50%', top: '30%', size: 180, color: '#fbbf24', zIndex: 30 }, // Gold (Inside Cup)
+  { id: 'second', left: '80%', top: '50%', size: 140, color: '#38bdf8', zIndex: 20 }, // Blue (Right)
+  { id: 'third',  left: '20%', top: '50%', size: 140, color: '#a855f7', zIndex: 20 }, // Purple (Left)
 ];
 
-// Background image - using local Ranking.png (relative path for GitHub Pages)
-export const STATIC_BG_URL = "./Ranking.png";
+// Background image - using CÚP.png trophy image (relative path for GitHub Pages)
+export const STATIC_BG_URL = "./CÚP.png";
 
 // Face tracking thresholds
 export const FACE_TRACKING = {
