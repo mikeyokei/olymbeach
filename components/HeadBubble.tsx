@@ -185,38 +185,34 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
       }}
       {...handlers}
     >
-      <div 
-        className="w-full h-full overflow-hidden shadow-2xl bg-black relative z-10"
-        style={{ 
-          clipPath: shape ? `url(#${shape.clipPathId})` : 'circle(50%)'
-        }}
-      >
-        <canvas ref={canvasRef} className="w-full h-full object-cover" />
-      </div>
-      
-      {/* SVG Stroke Overlay */}
-      {shape && (
-        <svg 
-          className="absolute pointer-events-none z-20"
-          style={{
-            left: '-2%',
-            top: '-2%',
-            width: '104%',
-            height: '104%',
+      {/* Inner wrapper with padding for stroke */}
+      <div className="absolute inset-[-5%] flex items-center justify-center">
+        <div 
+          className="w-[90.9%] h-[90.9%] shadow-2xl bg-black relative"
+          style={{ 
+            clipPath: shape ? `url(#${shape.clipPathId})` : 'circle(50%)',
           }}
-          viewBox={`-8 -8 ${shape.viewBoxWidth + 16} ${shape.viewBoxHeight + 16}`}
-          preserveAspectRatio="none"
         >
-          <path
-            d={shape.path}
-            fill="none"
-            stroke={color}
-            strokeWidth="8"
-            strokeLinejoin="round"
-            transform="translate(8, 8)"
-          />
-        </svg>
-      )}
+          <canvas ref={canvasRef} className="w-full h-full object-cover" />
+        </div>
+        
+        {/* SVG Stroke Overlay */}
+        {shape && (
+          <svg 
+            className="absolute w-[90.9%] h-[90.9%] pointer-events-none"
+            viewBox={`0 0 ${shape.viewBoxWidth} ${shape.viewBoxHeight}`}
+            preserveAspectRatio="none"
+          >
+            <path
+              d={shape.path}
+              fill="none"
+              stroke={color}
+              strokeWidth="8"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </div>
       
       {/* Optional: Shadow/Platform effect underneath - hidden on very small screens */}
       <div 
