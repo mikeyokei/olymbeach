@@ -197,8 +197,14 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
       {/* SVG Stroke Overlay */}
       {shape && (
         <svg 
-          className="absolute inset-0 w-full h-full pointer-events-none z-20"
-          viewBox={`0 0 ${shape.viewBoxWidth} ${shape.viewBoxHeight}`}
+          className="absolute pointer-events-none z-20"
+          style={{
+            left: '-2%',
+            top: '-2%',
+            width: '104%',
+            height: '104%',
+          }}
+          viewBox={`-8 -8 ${shape.viewBoxWidth + 16} ${shape.viewBoxHeight + 16}`}
           preserveAspectRatio="none"
         >
           <path
@@ -207,6 +213,7 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
             stroke={color}
             strokeWidth="8"
             strokeLinejoin="round"
+            transform="translate(8, 8)"
           />
         </svg>
       )}
