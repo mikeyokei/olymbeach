@@ -28,11 +28,11 @@ export const STATIC_BG_URL = "./CÚP.png";
 // Face tracking thresholds
 export const FACE_TRACKING = {
   // Maximum distance (pixels) between frames to consider same face
-  MATCH_DISTANCE_THRESHOLD: 200,
+  MATCH_DISTANCE_THRESHOLD: 250,
   // Time (ms) before removing a face from tracking
-  STALE_TRACK_TIMEOUT: 500,
-  // Detection frame rate (ms between detections) - reduces from 60fps to ~20fps
-  DETECTION_INTERVAL: 50,
+  STALE_TRACK_TIMEOUT: 600,
+  // Detection frame rate (ms between detections) - ~15fps for stability
+  DETECTION_INTERVAL: 66,
 } as const;
 
 // Camera configuration

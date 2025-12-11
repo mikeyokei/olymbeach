@@ -12,10 +12,17 @@ interface HeadBubbleProps {
   onDragMove?: (position: { x: number; y: number }) => void;
 }
 
+// Smoothing factor: 0 = instant (no smoothing), 1 = never moves
+// Lower values = more responsive but jittery, higher = smoother but laggy
+const SMOOTHING_FACTOR = 0.3;
+
 export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color, isActive, style, onDragMove }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastRenderTimeRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Smoothed face position for stable rendering
+  const smoothedFaceRef = useRef<FaceBox | null>(null);
   
   const { position, isDragging, handlers, dragListeners } = useDraggable();
 
@@ -60,6 +67,22 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
         if (elapsed >= FRAME_INTERVAL) {
           lastRenderTimeRef.current = currentTime;
 
+          // Apply smoothing to face position for stability
+          const smoothed = smoothedFaceRef.current;
+          if (!smoothed) {
+            // First detection - use as-is
+            smoothedFaceRef.current = { ...faceBox };
+          } else {
+            // Smooth interpolation toward new position
+            smoothedFaceRef.current = {
+              x: smoothed.x + (faceBox.x - smoothed.x) * (1 - SMOOTHING_FACTOR),
+              y: smoothed.y + (faceBox.y - smoothed.y) * (1 - SMOOTHING_FACTOR),
+              width: smoothed.width + (faceBox.width - smoothed.width) * (1 - SMOOTHING_FACTOR),
+              height: smoothed.height + (faceBox.height - smoothed.height) * (1 - SMOOTHING_FACTOR),
+            };
+          }
+          
+          const face = smoothedFaceRef.current;
           const size = CANVAS_CONFIG.INTERNAL_SIZE;
           
           // Only resize canvas if dimensions changed (avoid unnecessary resets)
@@ -83,11 +106,35 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
 
           // Draw Video
           // Calculate source coordinates with padding around the face
-          const padding = faceBox.width * CANVAS_CONFIG.FACE_PADDING_MULTIPLIER; 
-          const sx = Math.max(0, faceBox.x - padding / 2);
-          const sy = Math.max(0, faceBox.y - padding * CANVAS_CONFIG.FACE_PADDING_TOP_MULTIPLIER);
-          const sw = faceBox.width + padding;
-          const sh = faceBox.height + padding * CANVAS_CONFIG.FACE_PADDING_BOTTOM_MULTIPLIER;
+          const padding = face.width * CANVAS_CONFIG.FACE_PADDING_MULTIPLIER; 
+          let sx = face.x - padding / 2;
+          let sy = face.y - padding * CANVAS_CONFIG.FACE_PADDING_TOP_MULTIPLIER;
+          let sw = face.width + padding;
+          let sh = face.height + padding * CANVAS_CONFIG.FACE_PADDING_BOTTOM_MULTIPLIER;
+
+          // Get actual video dimensions
+          const videoWidth = video.videoWidth;
+          const videoHeight = video.videoHeight;
+
+          // Clamp source region to stay within video bounds
+          if (sx < 0) {
+            sw += sx; // reduce width by the overflow
+            sx = 0;
+          }
+          if (sy < 0) {
+            sh += sy; // reduce height by the overflow
+            sy = 0;
+          }
+          if (sx + sw > videoWidth) {
+            sw = videoWidth - sx;
+          }
+          if (sy + sh > videoHeight) {
+            sh = videoHeight - sy;
+          }
+
+          // Ensure minimum size to avoid drawing issues
+          sw = Math.max(sw, 10);
+          sh = Math.max(sh, 10);
 
           // Mirror and Draw
           ctx.scale(-1, 1);
@@ -103,6 +150,8 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
           ctx.stroke();
         }
       } else if (canvas && ctx && !isActive) {
+        // Reset smoothed position when inactive
+        smoothedFaceRef.current = null;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
 
