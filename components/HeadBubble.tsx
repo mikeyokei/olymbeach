@@ -176,14 +176,30 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
       {...handlers}
     >
       <div 
-        className="w-full h-full overflow-hidden shadow-2xl bg-black border-[3px] sm:border-[4px] relative z-10"
+        className="w-full h-full overflow-hidden shadow-2xl bg-black relative z-10"
         style={{ 
-          borderColor: color,
           clipPath: shape ? `url(#${shape.clipPathId})` : 'circle(50%)'
         }}
       >
         <canvas ref={canvasRef} className="w-full h-full object-cover" />
       </div>
+      
+      {/* SVG Stroke Overlay */}
+      {shape && (
+        <svg 
+          className="absolute inset-0 w-full h-full pointer-events-none z-20"
+          viewBox={`0 0 ${shape.viewBoxWidth} ${shape.viewBoxHeight}`}
+          preserveAspectRatio="none"
+        >
+          <path
+            d={shape.path}
+            fill="none"
+            stroke={color}
+            strokeWidth="8"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
       
       {/* Optional: Shadow/Platform effect underneath - hidden on very small screens */}
       <div 
