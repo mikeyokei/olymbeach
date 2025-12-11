@@ -55,8 +55,8 @@ export const SLOTS: SlotConfig[] = [
 // Export shapes for SVG defs
 export const SHAPES = [SHAPE_CUP_02, SHAPE_CUP_03, SHAPE_CUP_01];
 
-// Background image - using CÚP.png trophy image (relative path for GitHub Pages)
-export const STATIC_BG_URL = "./CÚP.png";
+// Background video - using MUA GIẢI.mp4 (relative path for GitHub Pages)
+export const STATIC_BG_URL = "./MUA GIẢI.mp4";
 
 // Face tracking thresholds
 export const FACE_TRACKING = {

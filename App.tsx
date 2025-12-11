@@ -77,16 +77,19 @@ const App: React.FC = () => {
       />
 
       {/* Main Stage Container - Wrapper for proper positioning */}
-      <div className="relative inline-block max-w-full max-h-screen sm:max-h-[90vh] shadow-2xl sm:border-[8px] border-black sm:rounded-lg">
+      <div className="relative inline-block shadow-2xl sm:border-[8px] border-black sm:rounded-lg" style={{ width: '720px', height: '1280px', maxWidth: '100vw', maxHeight: '100vh' }}>
         
-        {/* Background Image - Defines the exact size */}
-        <img 
+        {/* Background Video - Defines the exact size (720x1280) */}
+        <video 
           src={STATIC_BG_URL} 
-          alt="Stage Background" 
-          className="block w-auto h-auto max-w-full max-h-screen sm:max-h-[90vh] object-contain"
+          autoPlay 
+          loop 
+          muted 
+          playsInline
+          className="block w-full h-full object-cover"
         />
 
-        {/* Characters Layer - Positioned absolutely over the image */}
+        {/* Characters Layer - Positioned absolutely over the video */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
           {SLOTS.map((slot, idx) => {
              const face = displayFaces[idx];
