@@ -4,7 +4,7 @@ import { HeadBubble } from './components/HeadBubble';
 import { AppStatus } from './types';
 import { useCamera } from './hooks/useCamera';
 import { useFaceTracking } from './hooks/useFaceTracking';
-import { SLOTS, STATIC_BG_URL } from './utils/constants';
+import { SLOTS, STATIC_BG_URL, SHAPES } from './utils/constants';
 
 const App: React.FC = () => {
   const [modelReady, setModelReady] = useState(false);
@@ -48,6 +48,24 @@ const App: React.FC = () => {
   return (
     <div className="w-full h-screen overflow-hidden bg-neutral-900 flex items-center justify-center">
       
+      {/* SVG Clip Path Definitions */}
+      <svg width="0" height="0" className="absolute">
+        <defs>
+          {SHAPES.map((shape) => (
+            <clipPath 
+              key={shape.clipPathId} 
+              id={shape.clipPathId}
+              clipPathUnits="objectBoundingBox"
+            >
+              <path 
+                d={shape.path} 
+                transform={`scale(${1/shape.viewBoxWidth}, ${1/shape.viewBoxHeight})`}
+              />
+            </clipPath>
+          ))}
+        </defs>
+      </svg>
+
       {/* Hidden Video - Optimized for performance */}
       <video 
         ref={videoRef} 
@@ -90,6 +108,7 @@ const App: React.FC = () => {
                   videoRef={videoRef}
                   color={slot.color}
                   style={style}
+                  shape={slot.shape}
                />
              );
           })}

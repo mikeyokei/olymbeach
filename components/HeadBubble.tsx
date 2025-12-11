@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { FaceBox } from '../types';
-import { CANVAS_CONFIG } from '../utils/constants';
+import { CANVAS_CONFIG, ShapeConfig } from '../utils/constants';
 import { useDraggable } from '../hooks/useDraggable';
 
 interface HeadBubbleProps {
@@ -10,13 +10,14 @@ interface HeadBubbleProps {
   isActive: boolean;
   style?: React.CSSProperties;
   onDragMove?: (position: { x: number; y: number }) => void;
+  shape: ShapeConfig;
 }
 
 // Smoothing factor: 0 = instant (no smoothing), 1 = never moves
 // Lower values = more responsive but jittery, higher = smoother but laggy
 const SMOOTHING_FACTOR = 0.3;
 
-export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color, isActive, style, onDragMove }) => {
+export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color, isActive, style, onDragMove, shape }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastRenderTimeRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -83,26 +84,26 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
           }
           
           const face = smoothedFaceRef.current;
-          const size = CANVAS_CONFIG.INTERNAL_SIZE;
+          
+          // Calculate canvas dimensions based on shape aspect ratio
+          const aspectRatio = shape.viewBoxWidth / shape.viewBoxHeight;
+          const baseSize = CANVAS_CONFIG.INTERNAL_SIZE;
+          const canvasWidth = aspectRatio >= 1 ? baseSize : Math.round(baseSize * aspectRatio);
+          const canvasHeight = aspectRatio >= 1 ? Math.round(baseSize / aspectRatio) : baseSize;
           
           // Only resize canvas if dimensions changed (avoid unnecessary resets)
-          if (canvas.width !== size || canvas.height !== size) {
-            canvas.width = size;
-            canvas.height = size;
+          if (canvas.width !== canvasWidth || canvas.height !== canvasHeight) {
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
           }
 
           // Clear
-          ctx.clearRect(0, 0, size, size);
+          ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-          // Circular Clip
+          // Background fill (no circular clip - CSS clip-path handles the shape)
           ctx.save();
-          ctx.beginPath();
-          ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-          ctx.clip();
-
-          // Background fill
           ctx.fillStyle = "#222";
-          ctx.fillRect(0, 0, size, size);
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
           // Draw Video
           // Calculate source coordinates with padding around the face
@@ -138,16 +139,9 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
 
           // Mirror and Draw
           ctx.scale(-1, 1);
-          ctx.translate(-size, 0);
-          ctx.drawImage(video, sx, sy, sw, sh, 0, 0, size, size);
+          ctx.translate(-canvasWidth, 0);
+          ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvasWidth, canvasHeight);
           ctx.restore();
-
-          // Inner Border (adds a nice sticker effect)
-          ctx.strokeStyle = "rgba(255,255,255,0.2)";
-          ctx.lineWidth = 4;
-          ctx.beginPath();
-          ctx.arc(size / 2, size / 2, (size / 2) - 2, 0, Math.PI * 2);
-          ctx.stroke();
         }
       } else if (canvas && ctx && !isActive) {
         // Reset smoothed position when inactive
@@ -167,16 +161,23 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
     return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
-  }, [videoRef, faceBox, isActive]);
+  }, [videoRef, faceBox, isActive, shape]);
 
+  // Calculate aspect ratio for sizing
+  const aspectRatio = shape.viewBoxWidth / shape.viewBoxHeight;
+  
   return (
     <div 
       ref={containerRef}
       className={`absolute ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}
       style={{
         ...style,
-        width: 'var(--bubble-size, 160px)',
-        height: 'var(--bubble-size, 160px)',
+        width: aspectRatio >= 1 
+          ? 'var(--bubble-size, 160px)' 
+          : `calc(var(--bubble-size, 160px) * ${aspectRatio})`,
+        height: aspectRatio >= 1 
+          ? `calc(var(--bubble-size, 160px) / ${aspectRatio})` 
+          : 'var(--bubble-size, 160px)',
         left: style?.left ? `calc(${style.left} + ${position.x}px)` : position.x,
         top: style?.top ? `calc(${style.top} + ${position.y}px)` : position.y,
         transition: isDragging ? 'none' : 'all 500ms ease-out',
@@ -185,8 +186,10 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
       {...handlers}
     >
       <div 
-        className="w-full h-full rounded-full overflow-hidden shadow-2xl bg-black border-[3px] sm:border-[4px] relative z-10"
-        style={{ borderColor: color }}
+        className="w-full h-full overflow-hidden shadow-2xl bg-black relative z-10"
+        style={{ 
+          clipPath: `url(#${shape.clipPathId})`,
+        }}
       >
         <canvas ref={canvasRef} className="w-full h-full object-cover" />
       </div>
