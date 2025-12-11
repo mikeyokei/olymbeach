@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { FaceBox } from '../types';
-import { CANVAS_CONFIG } from '../utils/constants';
+import { CANVAS_CONFIG, ShapeConfig } from '../utils/constants';
 import { useDraggable } from '../hooks/useDraggable';
 
 interface HeadBubbleProps {
@@ -9,6 +9,7 @@ interface HeadBubbleProps {
   color: string;
   isActive: boolean;
   style?: React.CSSProperties;
+  shape?: ShapeConfig;
   onDragMove?: (position: { x: number; y: number }) => void;
 }
 
@@ -16,7 +17,7 @@ interface HeadBubbleProps {
 // Lower values = more responsive but jittery, higher = smoother but laggy
 const SMOOTHING_FACTOR = 0.3;
 
-export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color, isActive, style, onDragMove }) => {
+export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color, isActive, style, shape, onDragMove }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastRenderTimeRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -94,15 +95,12 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
           // Clear
           ctx.clearRect(0, 0, size, size);
 
-          // Circular Clip
-          ctx.save();
-          ctx.beginPath();
-          ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-          ctx.clip();
-
           // Background fill
           ctx.fillStyle = "#222";
           ctx.fillRect(0, 0, size, size);
+
+          // No canvas clipping - using CSS clip-path instead
+          ctx.save();
 
           // Draw Video
           // Calculate source coordinates with padding around the face
@@ -141,13 +139,6 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
           ctx.translate(-size, 0);
           ctx.drawImage(video, sx, sy, sw, sh, 0, 0, size, size);
           ctx.restore();
-
-          // Inner Border (adds a nice sticker effect)
-          ctx.strokeStyle = "rgba(255,255,255,0.2)";
-          ctx.lineWidth = 4;
-          ctx.beginPath();
-          ctx.arc(size / 2, size / 2, (size / 2) - 2, 0, Math.PI * 2);
-          ctx.stroke();
         }
       } else if (canvas && ctx && !isActive) {
         // Reset smoothed position when inactive
@@ -185,8 +176,11 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
       {...handlers}
     >
       <div 
-        className="w-full h-full rounded-full overflow-hidden shadow-2xl bg-black border-[3px] sm:border-[4px] relative z-10"
-        style={{ borderColor: color }}
+        className="w-full h-full overflow-hidden shadow-2xl bg-black border-[3px] sm:border-[4px] relative z-10"
+        style={{ 
+          borderColor: color,
+          clipPath: shape ? `url(#${shape.clipPathId})` : 'circle(50%)'
+        }}
       >
         <canvas ref={canvasRef} className="w-full h-full object-cover" />
       </div>
