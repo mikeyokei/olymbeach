@@ -114,6 +114,16 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
           const videoWidth = video.videoWidth;
           const videoHeight = video.videoHeight;
 
+          // Make source region square to prevent stretching
+          // Use the larger dimension to ensure the face is fully captured
+          const squareSize = Math.max(sw, sh);
+          const centerX = sx + sw / 2;
+          const centerY = sy + sh / 2;
+          sx = centerX - squareSize / 2;
+          sy = centerY - squareSize / 2;
+          sw = squareSize;
+          sh = squareSize;
+
           // Clamp source region to stay within video bounds
           if (sx < 0) {
             sw += sx; // reduce width by the overflow
