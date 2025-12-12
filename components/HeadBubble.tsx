@@ -27,6 +27,11 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
   
   const { position, isDragging, handlers, dragListeners } = useDraggable();
 
+  // Calculate aspect ratio for the shape to prevent stretching
+  const shapeAspectRatio = shape 
+    ? shape.viewBoxWidth / shape.viewBoxHeight 
+    : 1;
+
   // Global drag listeners
   useEffect(() => {
     if (isDragging) {
@@ -84,20 +89,33 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
           }
           
           const face = smoothedFaceRef.current;
-          const size = CANVAS_CONFIG.INTERNAL_SIZE;
+          const baseSize = CANVAS_CONFIG.INTERNAL_SIZE;
+          
+          // Calculate canvas dimensions based on shape aspect ratio
+          let canvasWidth: number;
+          let canvasHeight: number;
+          if (shapeAspectRatio >= 1) {
+            // Wide or square shape
+            canvasWidth = baseSize;
+            canvasHeight = Math.round(baseSize / shapeAspectRatio);
+          } else {
+            // Tall shape
+            canvasWidth = Math.round(baseSize * shapeAspectRatio);
+            canvasHeight = baseSize;
+          }
           
           // Only resize canvas if dimensions changed (avoid unnecessary resets)
-          if (canvas.width !== size || canvas.height !== size) {
-            canvas.width = size;
-            canvas.height = size;
+          if (canvas.width !== canvasWidth || canvas.height !== canvasHeight) {
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
           }
 
           // Clear
-          ctx.clearRect(0, 0, size, size);
+          ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
           // Background fill
           ctx.fillStyle = "#222";
-          ctx.fillRect(0, 0, size, size);
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
           // No canvas clipping - using CSS clip-path instead
           ctx.save();
@@ -114,15 +132,25 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
           const videoWidth = video.videoWidth;
           const videoHeight = video.videoHeight;
 
-          // Make source region square to prevent stretching
-          // Use the larger dimension to ensure the face is fully captured
-          const squareSize = Math.max(sw, sh);
+          // Adjust source region to match canvas aspect ratio
+          // This ensures the face isn't stretched
+          const sourceAspect = sw / sh;
+          const canvasAspect = canvasWidth / canvasHeight;
+          
           const centerX = sx + sw / 2;
           const centerY = sy + sh / 2;
-          sx = centerX - squareSize / 2;
-          sy = centerY - squareSize / 2;
-          sw = squareSize;
-          sh = squareSize;
+          
+          if (sourceAspect > canvasAspect) {
+            // Source is wider, need to increase height
+            const newHeight = sw / canvasAspect;
+            sy = centerY - newHeight / 2;
+            sh = newHeight;
+          } else {
+            // Source is taller, need to increase width
+            const newWidth = sh * canvasAspect;
+            sx = centerX - newWidth / 2;
+            sw = newWidth;
+          }
 
           // Clamp source region to stay within video bounds
           if (sx < 0) {
@@ -146,8 +174,8 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
 
           // Mirror and Draw
           ctx.scale(-1, 1);
-          ctx.translate(-size, 0);
-          ctx.drawImage(video, sx, sy, sw, sh, 0, 0, size, size);
+          ctx.translate(-canvasWidth, 0);
+          ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvasWidth, canvasHeight);
           ctx.restore();
         }
       } else if (canvas && ctx && !isActive) {
@@ -168,7 +196,22 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
     return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
-  }, [videoRef, faceBox, isActive]);
+  }, [videoRef, faceBox, isActive, shapeAspectRatio]);
+
+  // Calculate dimensions that maintain aspect ratio within the bubble size
+  // Wide shapes (aspect > 1): width = bubbleSize, height = bubbleSize / aspect
+  // Tall shapes (aspect < 1): height = bubbleSize, width = bubbleSize * aspect
+  const getShapeDimensions = () => {
+    if (shapeAspectRatio >= 1) {
+      // Wide or square shape
+      return { width: '100%', height: `${100 / shapeAspectRatio}%` };
+    } else {
+      // Tall shape (like CÚP-01)
+      return { width: `${100 * shapeAspectRatio}%`, height: '100%' };
+    }
+  };
+
+  const shapeDims = getShapeDimensions();
 
   return (
     <div 
@@ -185,21 +228,27 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
       }}
       {...handlers}
     >
-      {/* Inner wrapper with padding for stroke */}
+      {/* Inner wrapper with padding for stroke - centered */}
       <div className="absolute inset-[-5%] flex items-center justify-center">
         <div 
-          className="w-[90.9%] h-[90.9%] shadow-2xl bg-black relative"
+          className="shadow-2xl bg-black relative"
           style={{ 
+            width: shapeDims.width,
+            height: shapeDims.height,
             clipPath: shape ? `url(#${shape.clipPathId})` : 'circle(50%)',
           }}
         >
           <canvas ref={canvasRef} className="w-full h-full object-cover" />
         </div>
         
-        {/* SVG Stroke Overlay */}
+        {/* SVG Stroke Overlay - same dimensions as clipped area */}
         {shape && (
           <svg 
-            className="absolute w-[90.9%] h-[90.9%] pointer-events-none"
+            className="absolute pointer-events-none"
+            style={{
+              width: shapeDims.width,
+              height: shapeDims.height,
+            }}
             viewBox={`0 0 ${shape.viewBoxWidth} ${shape.viewBoxHeight}`}
             preserveAspectRatio="none"
           >

@@ -10,6 +10,7 @@ export interface TrackedFace {
   id: number;
   data: FaceBox;
   lastSeen: number;
+  slotIndex?: number; // Assigned slot index (random assignment)
 }
 
 /**
@@ -114,8 +115,55 @@ export const updateTrackedFaces = (
 };
 
 /**
+ * Get available slot indices that are not currently assigned
+ */
+const getAvailableSlots = (trackedFaces: TrackedFace[], numSlots: number): number[] => {
+  const usedSlots = new Set(
+    trackedFaces
+      .filter(track => track.slotIndex !== undefined)
+      .map(track => track.slotIndex!)
+  );
+  
+  const available: number[] = [];
+  for (let i = 0; i < numSlots; i++) {
+    if (!usedSlots.has(i)) {
+      available.push(i);
+    }
+  }
+  return available;
+};
+
+/**
+ * Shuffle array using Fisher-Yates algorithm
+ */
+const shuffleArray = <T>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+/**
+ * Assign random slot to a new face
+ */
+export const assignRandomSlot = (
+  trackedFaces: TrackedFace[],
+  newFace: TrackedFace,
+  numSlots: number
+): number | undefined => {
+  const available = getAvailableSlots(trackedFaces, numSlots);
+  if (available.length === 0) return undefined;
+  
+  // Pick a random available slot
+  const randomIndex = Math.floor(Math.random() * available.length);
+  return available[randomIndex];
+};
+
+/**
  * Convert tracked faces to display slots
- * Takes top 3 tracked faces and assigns them to slots
+ * Uses random slot assignment - faces keep their assigned slot
  */
 export const assignFacesToSlots = (
   trackedFaces: TrackedFace[],
@@ -123,8 +171,24 @@ export const assignFacesToSlots = (
 ): (FaceBox | null)[] => {
   const slots: (FaceBox | null)[] = new Array(numSlots).fill(null);
   
-  trackedFaces.slice(0, numSlots).forEach((track, i) => {
-    slots[i] = track.data;
+  // Assign faces that already have a slot
+  trackedFaces.forEach((track) => {
+    if (track.slotIndex !== undefined && track.slotIndex < numSlots) {
+      slots[track.slotIndex] = track.data;
+    }
+  });
+  
+  // Find faces without slots and available slots
+  const unassignedFaces = trackedFaces.filter(
+    track => track.slotIndex === undefined || track.slotIndex >= numSlots
+  );
+  const availableSlots = getAvailableSlots(trackedFaces, numSlots);
+  
+  // Randomly assign unassigned faces to available slots
+  const shuffledSlots = shuffleArray(availableSlots);
+  unassignedFaces.slice(0, shuffledSlots.length).forEach((track, i) => {
+    track.slotIndex = shuffledSlots[i];
+    slots[shuffledSlots[i]] = track.data;
   });
 
   return slots;
