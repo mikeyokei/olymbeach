@@ -30,7 +30,7 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
 
   // Calculate aspect ratio for the shape to prevent stretching
   const shapeAspectRatio = shape 
-    ? shape.viewBoxWidth / shape.viewBoxHeight 
+    ? shape.pathWidth / shape.pathHeight 
     : 1;
 
   // Global drag listeners
@@ -249,8 +249,9 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
             style={{
               width: shapeDims.width,
               height: shapeDims.height,
+              overflow: 'visible',
             }}
-            viewBox={`0 0 ${shape.viewBoxWidth} ${shape.viewBoxHeight}`}
+            viewBox={`0 0 ${shape.pathWidth} ${shape.pathHeight}`}
             preserveAspectRatio="none"
           >
             <path

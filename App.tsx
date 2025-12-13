@@ -76,7 +76,7 @@ const App: React.FC = () => {
             >
               <path 
                 d={shape.path} 
-                transform={`scale(${1/shape.viewBoxWidth}, ${1/shape.viewBoxHeight})`}
+                transform={`scale(${1/shape.pathWidth}, ${1/shape.pathHeight})`}
               />
             </clipPath>
           ))}
