@@ -10,6 +10,7 @@ interface HeadBubbleProps {
   isActive: boolean;
   style?: React.CSSProperties;
   shape?: ShapeConfig;
+  initialOffset?: { x: number; y: number };
   onDragMove?: (position: { x: number; y: number }) => void;
 }
 
@@ -17,7 +18,7 @@ interface HeadBubbleProps {
 // Lower values = more responsive but jittery, higher = smoother but laggy
 const SMOOTHING_FACTOR = 0.3;
 
-export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color, isActive, style, shape, onDragMove }) => {
+export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color, isActive, style, shape, initialOffset, onDragMove }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastRenderTimeRef = useRef<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -25,7 +26,7 @@ export const HeadBubble: React.FC<HeadBubbleProps> = ({ videoRef, faceBox, color
   // Smoothed face position for stable rendering
   const smoothedFaceRef = useRef<FaceBox | null>(null);
   
-  const { position, isDragging, handlers, dragListeners } = useDraggable();
+  const { position, isDragging, handlers, dragListeners } = useDraggable(initialOffset || { x: 0, y: 0 });
 
   // Calculate aspect ratio for the shape to prevent stretching
   const shapeAspectRatio = shape 

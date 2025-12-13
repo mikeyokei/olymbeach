@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { initializeFaceDetector } from './services/visionService';
 import { HeadBubble } from './components/HeadBubble';
 import { AppStatus } from './types';
@@ -9,6 +9,9 @@ import { SLOTS, STATIC_BG_URL, SHAPES } from './utils/constants';
 const App: React.FC = () => {
   const [modelReady, setModelReady] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Track bubble positions for logging
+  const positionsRef = useRef<Record<string, { x: number; y: number }>>({});
   
   // Initialize camera
   const { videoRef, status, isVideoReady } = useCamera();
@@ -44,6 +47,20 @@ const App: React.FC = () => {
     isModelReady: modelReady,
   });
 
+  // Handle bubble drag and log positions
+  const handleBubbleDrag = useCallback((slotId: string, position: { x: number; y: number }) => {
+    positionsRef.current[slotId] = position;
+    
+    // Log all positions in a copyable format
+    const positionConfig = SLOTS.map(slot => {
+      const pos = positionsRef.current[slot.id] || { x: slot.offsetX || 0, y: slot.offsetY || 0 };
+      return `  { id: '${slot.id}', left: '${slot.left}', top: '${slot.top}', size: ${slot.size}, color: '${slot.color}', zIndex: ${slot.zIndex}, offsetX: ${Math.round(pos.x)}, offsetY: ${Math.round(pos.y)}, shape: SHAPE_${slot.id.toUpperCase()} },`;
+    }).join('\n');
+    
+    console.clear();
+    console.log('%c📍 BUBBLE POSITIONS - Copy this to constants.ts:', 'color: #fbbf24; font-weight: bold; font-size: 14px;');
+    console.log(`\nexport const SLOTS: SlotConfig[] = [\n${positionConfig}\n];`);
+  }, []);
 
   return (
     <div className="w-full h-screen overflow-hidden bg-neutral-900 flex items-center justify-center">
@@ -112,6 +129,8 @@ const App: React.FC = () => {
                   color={slot.color}
                   style={style}
                   shape={slot.shape}
+                  initialOffset={{ x: slot.offsetX || 0, y: slot.offsetY || 0 }}
+                  onDragMove={(pos) => handleBubbleDrag(slot.id, pos)}
                />
              );
           })}

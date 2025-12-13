@@ -17,6 +17,8 @@ export interface SlotConfig {
   color: string;
   zIndex: number;
   shape: ShapeConfig;
+  offsetX?: number;  // Pixel offset from base position
+  offsetY?: number;  // Pixel offset from base position
 }
 
 // SVG Shape Paths extracted from CÚP SVG files
@@ -47,9 +49,9 @@ const SHAPE_CUP_01: ShapeConfig = {
 // 3rd -> Left position
 // Note: Sizes will be responsive via CSS (scaled down on mobile)
 export const SLOTS: SlotConfig[] = [
-  { id: 'winner', left: '50%', top: '30%', size: 180, color: '#fbbf24', zIndex: 30, shape: SHAPE_CUP_02 }, // Gold (Inside Cup)
-  { id: 'second', left: '80%', top: '50%', size: 140, color: '#38bdf8', zIndex: 20, shape: SHAPE_CUP_03 }, // Blue (Right)
-  { id: 'third',  left: '20%', top: '50%', size: 140, color: '#a855f7', zIndex: 20, shape: SHAPE_CUP_01 }, // Purple (Left)
+  { id: 'winner', left: '50%', top: '30%', size: 240, color: '#fbbf24', zIndex: 30, offsetX: 14, offsetY: -110, shape: SHAPE_CUP_02 }, // Gold (Inside Cup)
+  { id: 'second', left: '80%', top: '50%', size: 190, color: '#38bdf8', zIndex: 20, offsetX: 25, offsetY: 135, shape: SHAPE_CUP_03 }, // Blue (Right)
+  { id: 'third',  left: '20%', top: '50%', size: 190, color: '#a855f7', zIndex: 20, offsetX: -31, offsetY: 88, shape: SHAPE_CUP_01 }, // Purple (Left)
 ];
 
 // Export shapes for SVG defs
